@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PermaTime"
         mc:Ignorable="d"
-        Title="MainWindow" Height="40" Width="100" AllowsTransparency="True" WindowStyle="None" Closing="Close_App">
+        Title="MainWindow" MaxHeight="40" MinHeight="40" Height="40" MaxWidth="100" MinWidth="100" Width="100" AllowsTransparency="True" WindowStyle="None" Closing="Close_App">
     <Window.Background>
         <SolidColorBrush Opacity="0.50" Color="#FF7D7D7D"/>
     </Window.Background>
