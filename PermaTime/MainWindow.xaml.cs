@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
+//using System.Drawing;
 using System.Globalization;
 using System.Text;
 using System.Windows;
@@ -21,9 +22,18 @@ namespace PermaTime
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const int TIME_UPDATE_INTERVAL = 500;
-        private const double OPACITY_STEP = 0.02;
+        private const int TIME_UPDATE_INTERVAL = 10; // ms
+        private const double OPACITY_STEP = 0.01;
         private const double OPACITY_DEFAULT = 0.50;
+
+        // Background properties
+        private SolidColorBrush _bg = new SolidColorBrush(Colors.White);
+        private double _bgOpacity = OPACITY_DEFAULT; // Starting background opacity must be default value
+        private Rect _bgRect;
+
+        // Time text geometry
+        private Geometry _textGeometry;
+        private FormattedText _formattedText;
 
         private bool _isRunning = false;
         private bool _mouseWasDown = false;
@@ -50,32 +60,77 @@ namespace PermaTime
             MouseMove += MainWindow_MouseMove;
             MouseDoubleClick += MainWindow_MouseDoubleClick;
 
+            // Key press event for changing background opacity
             KeyDown += MainWindow_KeyDown;
+
+            // Background whose opacity we will change with keypresses
+            _bgRect = new Rect(0, 0, Width, Height);
+        }
+
+        /// <summary>
+        /// OnRender override draws the geometry of the text and optional highlight.
+        /// </summary>
+        /// <param name="drawingContext">Drawing context of the OutlineText control.</param>
+        protected override void OnRender(DrawingContext drawingContext)
+        {
+            // Set (possibly) updated background opacity 
+            _bg.Opacity = _bgOpacity;
+
+            // Draw the background
+            drawingContext.DrawRectangle(_bg, null, _bgRect);
+
+            // Create the time text with outline
+            FormattedText formattedText = new FormattedText(
+                DateTime.Now.ToString("HH:mm"),
+                CultureInfo.GetCultureInfo("en-us"),
+                FlowDirection.LeftToRight,
+                new Typeface(
+                    new FontFamily("Arial"),
+                    FontStyles.Normal,
+                    FontWeights.Bold,
+                    FontStretches.Normal),
+                35,
+                Brushes.Black, // This brush does not matter since we use the geometry of the text.
+                VisualTreeHelper.GetDpi(this).PixelsPerDip // Needed because https://stackoverflow.com/questions/45765980/formattedtext-formttedtext-is-obsolete-use-the-pixelsperdip-override
+            );
+
+            // Get the x/y vals needed to center the time text in the window
+            double xLoc = (Width / 2) - (formattedText.Width / 2);
+            double yLoc = (Height / 2) - (formattedText.Height / 2);
+
+            // Build the geometry object that represents the text.
+            _textGeometry = formattedText.BuildGeometry(new Point(xLoc, yLoc));
+
+            // Draw the time text
+            drawingContext.DrawGeometry(Brushes.Black, new Pen(Brushes.White, 1.25), _textGeometry);
         }
 
         #region Events
         /// <summary>
-        /// Close the window when ESC key is pressed.
+        /// ESC key: Close the app
+        /// Up key: Increase background opacity
+        /// Down key: Decrease background opacity
+        /// Back key: Revert background opacity to start value
         /// </summary>
         private void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Escape) 
+            if (e.Key == Key.Escape)
             {
                 Close();
             }
             else if (e.Key == Key.Up)
             {
-                if ((Background.Opacity + OPACITY_STEP) <= 1)
-                    Background.Opacity += OPACITY_STEP;
+                if ((_bgOpacity + OPACITY_STEP) <= 1)
+                    _bgOpacity += OPACITY_STEP;
             }
             else if (e.Key == Key.Down)
             {
-                if ((Background.Opacity - OPACITY_STEP) >= OPACITY_STEP)
-                    Background.Opacity -= OPACITY_STEP;
+                if ((_bgOpacity - OPACITY_STEP) >= OPACITY_STEP)
+                    _bgOpacity -= OPACITY_STEP;
             }
             else if (e.Key == Key.Back)
             {
-                Background.Opacity = OPACITY_DEFAULT;
+                _bgOpacity = OPACITY_DEFAULT;
             }
         }
 
@@ -100,7 +155,7 @@ namespace PermaTime
                 _lastMouseScreenPos = PointToScreen(Mouse.GetPosition(this));
 
                 Left = Left + (_lastMouseScreenPos.X - prevMouseScreenPos.X);
-                Top = Top + (_lastMouseScreenPos.Y - prevMouseScreenPos.Y);
+                Top  = Top  + (_lastMouseScreenPos.Y - prevMouseScreenPos.Y);
             }
             else
             {
@@ -128,7 +183,7 @@ namespace PermaTime
             {
                 try
                 {
-                    Dispatcher.Invoke(() => { LblTime.Content = DateTime.Now.ToString("HH:mm"); });
+                    Dispatcher.Invoke(() => { InvalidateVisual(); }); // InvalidateVisual() forces OnRender to be called
                 }
                 catch (TaskCanceledException e)
                 {

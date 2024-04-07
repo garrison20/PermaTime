@@ -7,23 +7,11 @@
         mc:Ignorable="d"
         Title="MainWindow" MaxHeight="40" MinHeight="40" Height="40" MaxWidth="100" MinWidth="100" Width="100" AllowsTransparency="True" WindowStyle="None" Closing="Close_App">
     <Window.Background>
-        <SolidColorBrush Opacity="0.50" Color="#FF7D7D7D"/>
+        <SolidColorBrush Opacity="0.01" Color="#FF7D7D7D"/>
     </Window.Background>
     <Window.Clip>
         <RectangleGeometry Rect="0,0,100,40" RadiusX="5" RadiusY="5"/>
     </Window.Clip>
-
     <Grid>
-        <Canvas Name="TimeCanvas" HorizontalAlignment="Right" Height="38" VerticalAlignment="Center" Width="93"/>
-        <Label Name="LblTime" FontFamily="Arial" FontStyle="Normal" FontWeight="ExtraBold" FontSize="30" Foreground="White">
-            <Label.Effect>
-                <DropShadowEffect BlurRadius="4" 
-                           ShadowDepth="0" 
-                           Color="Black" />
-            </Label.Effect>
-            00:00
-        </Label>
     </Grid>
-
-
 </Window>
