@@ -25,15 +25,16 @@ namespace PermaTime
         private const int TIME_UPDATE_INTERVAL = 10; // ms
         private const double OPACITY_STEP = 0.01;
         private const double OPACITY_DEFAULT = 0.50;
+        private const double PROGRESS_BAR_HEIGHT = 3;
+        private const long OPACITY_TIME_CUTOFF = 1000; // ms
 
         // Background properties
-        private SolidColorBrush _bg = new SolidColorBrush(Colors.White);
+        private double _progressBarYLoc;
         private double _bgOpacity = OPACITY_DEFAULT; // Starting background opacity must be default value
+        private long _keyInputTime;
         private Rect _bgRect;
-
-        // Time text geometry
-        private Geometry _textGeometry;
-        private FormattedText _formattedText;
+        private SolidColorBrush _bg = new SolidColorBrush(Colors.DarkSlateGray);
+        private SolidColorBrush _pb = new SolidColorBrush(Colors.Magenta);
 
         private bool _isRunning = false;
         private bool _mouseWasDown = false;
@@ -65,6 +66,9 @@ namespace PermaTime
 
             // Background whose opacity we will change with keypresses
             _bgRect = new Rect(0, 0, Width, Height);
+
+            // Set the progress bar y location in memory
+            _progressBarYLoc = Height - PROGRESS_BAR_HEIGHT;
         }
 
         /// <summary>
@@ -87,9 +91,9 @@ namespace PermaTime
                 new Typeface(
                     new FontFamily("Arial"),
                     FontStyles.Normal,
-                    FontWeights.Bold,
+                    FontWeights.ExtraBold,
                     FontStretches.Normal),
-                35,
+                30,
                 Brushes.Black, // This brush does not matter since we use the geometry of the text.
                 VisualTreeHelper.GetDpi(this).PixelsPerDip // Needed because https://stackoverflow.com/questions/45765980/formattedtext-formttedtext-is-obsolete-use-the-pixelsperdip-override
             );
@@ -99,10 +103,18 @@ namespace PermaTime
             double yLoc = (Height / 2) - (formattedText.Height / 2);
 
             // Build the geometry object that represents the text.
-            _textGeometry = formattedText.BuildGeometry(new Point(xLoc, yLoc));
+            Geometry textGeometry = formattedText.BuildGeometry(new Point(xLoc, yLoc));
 
             // Draw the time text
-            drawingContext.DrawGeometry(Brushes.Black, new Pen(Brushes.White, 1.25), _textGeometry);
+            drawingContext.DrawGeometry(Brushes.White, null, textGeometry);
+
+            // Draw the opacity percentage bar if the last opacity change was within our time threshold
+            if ((GetTimeMs() - _keyInputTime) < OPACITY_TIME_CUTOFF)
+            {
+                double progressBarWidth = Width * _bgOpacity;
+                Rect opacityBar = new Rect(0, _progressBarYLoc, progressBarWidth, PROGRESS_BAR_HEIGHT);
+                drawingContext.DrawRectangle(_pb, null, opacityBar);
+            }
         }
 
         #region Events
@@ -122,15 +134,21 @@ namespace PermaTime
             {
                 if ((_bgOpacity + OPACITY_STEP) <= 1)
                     _bgOpacity += OPACITY_STEP;
+
+                _keyInputTime = GetTimeMs();
             }
             else if (e.Key == Key.Down)
             {
                 if ((_bgOpacity - OPACITY_STEP) >= OPACITY_STEP)
                     _bgOpacity -= OPACITY_STEP;
+
+                _keyInputTime = GetTimeMs();
             }
             else if (e.Key == Key.Back)
             {
                 _bgOpacity = OPACITY_DEFAULT;
+
+                _keyInputTime = GetTimeMs();
             }
         }
 
@@ -155,7 +173,7 @@ namespace PermaTime
                 _lastMouseScreenPos = PointToScreen(Mouse.GetPosition(this));
 
                 Left = Left + (_lastMouseScreenPos.X - prevMouseScreenPos.X);
-                Top  = Top  + (_lastMouseScreenPos.Y - prevMouseScreenPos.Y);
+                Top = Top + (_lastMouseScreenPos.Y - prevMouseScreenPos.Y);
             }
             else
             {
@@ -201,6 +219,11 @@ namespace PermaTime
         {
             _isRunning = false;
             _clockThread?.Join();
+        }
+
+        private long GetTimeMs()
+        {
+            return DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
         }
     }
 }
