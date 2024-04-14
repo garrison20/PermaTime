@@ -23,18 +23,18 @@ namespace PermaTime
     public partial class MainWindow : Window
     {
         private const int TIME_UPDATE_INTERVAL = 10; // ms
+        private const long OPACITY_TIME_CUTOFF = 1000; // ms
         private const double OPACITY_STEP = 0.01;
         private const double OPACITY_DEFAULT = 0.50;
         private const double PROGRESS_BAR_HEIGHT = 3;
-        private const long OPACITY_TIME_CUTOFF = 1000; // ms
 
         // Background properties
         private double _progressBarYLoc;
         private double _bgOpacity = OPACITY_DEFAULT; // Starting background opacity must be default value
         private long _keyInputTime;
         private Rect _bgRect;
-        private SolidColorBrush _bg = new SolidColorBrush(Colors.DarkSlateGray);
-        private SolidColorBrush _pb = new SolidColorBrush(Colors.Magenta);
+        private SolidColorBrush _bg = new SolidColorBrush(Colors.SteelBlue);
+        private SolidColorBrush _pb = new SolidColorBrush(Colors.SpringGreen);
 
         private bool _isRunning = false;
         private bool _mouseWasDown = false;
